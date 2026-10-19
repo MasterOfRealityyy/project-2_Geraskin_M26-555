@@ -14,6 +14,8 @@
 
 ### Пример использования
 
+[![asciicast](https://asciinema.org/a/Arfn79TVQvF31iBj.svg)](https://asciinema.org/a/Arfn79TVQvF31iBj)
+
 ```text
 Введите команду: create_table users name:str age:int
 Таблица 'users' создана
@@ -24,4 +26,6 @@
 
 Введите команду: drop_table users
 Таблица 'users' удалена
+
+
 
