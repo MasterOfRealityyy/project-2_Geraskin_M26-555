@@ -3,9 +3,9 @@ import shlex
 from prettytable import PrettyTable
 
 from primitive_db.core import create_table, delete, drop_table, insert, select, update
+from primitive_db.decorators import create_cacher
 from primitive_db.parser import convert_values, parse_set, parse_where
 from primitive_db.utils import (
-    create_cacher,
     load_metadata,
     load_table_data,
     save_metadata,

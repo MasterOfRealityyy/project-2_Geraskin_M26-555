@@ -46,3 +46,16 @@ def log_time(func: Callable) -> Callable:
         return result
 
     return wrapper
+
+def create_cacher() -> Callable[[str, Callable[[], Any]], Any]:
+    cache = {}
+
+    def cache_result(key: str, value_func: Callable[[], Any]) -> Any:
+        if key in cache:
+            return cache[key]
+
+        result = value_func()
+        cache[key] = result
+        return result
+
+    return cache_result

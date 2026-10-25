@@ -8,7 +8,7 @@ from primitive_db.utils import load_table_data, save_table_data
 @handle_db_errors
 def create_table(metadata: dict[str, Any],
                  table_name: str, columns: list[str]) -> dict[str, Any]:
-    
+
     if table_name in metadata:
         raise ValueError(f"Таблица с именем {table_name} уже существует")
 
