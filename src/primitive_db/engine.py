@@ -1,8 +1,18 @@
-from primitive_db.utils import load_metadata, save_metadata, load_table_data, save_table_data
-from primitive_db.core import create_table, drop_table, insert, select, update, delete
-from primitive_db.parser import parse_where, parse_set, convert_values
-from prettytable import PrettyTable
 import shlex
+
+from prettytable import PrettyTable
+
+from primitive_db.constans import METADATA_FILE
+from primitive_db.core import create_table, delete, drop_table, insert, select, update
+from primitive_db.decorators import create_cacher
+from primitive_db.parser import convert_values, parse_set, parse_where
+from primitive_db.utils import (
+    load_metadata,
+    load_table_data,
+    save_metadata,
+    save_table_data,
+)
+
 
 def print_help() -> None:
     """Выводит справочную информацию по командам."""
@@ -14,11 +24,15 @@ def print_help() -> None:
 
     print("\n***Операции с данными***")
     print("Функции:")
-    print("<command> insert into <имя_таблицы> values (<значение1>, <значение2>, ...) - создать запись")
-    print("<command> select from <имя_таблицы> where <столбец> = <значение> - прочитать записи по условию")
+    print("<command> insert into <имя_таблицы> "
+          "values (<значение1>, <значение2>, ...) - создать запись")
+    print("<command> select from <имя_таблицы> "
+          "where <столбец> = <значение> - прочитать записи по условию")
     print("<command> select from <имя_таблицы> - прочитать все записи")
-    print("<command> update <имя_таблицы> set <столбец> = <новое_значение> where <столбец_условия> = <значение_условия> - обновить запись")
-    print("<command> delete from <имя_таблицы> where <столбец> = <значение> - удалить запись")
+    print("<command> update <имя_таблицы> set <столбец> = <новое_значение> "
+          "where <столбец_условия> = <значение_условия> - обновить запись")
+    print("<command> delete from <имя_таблицы> "
+          "where <столбец> = <значение> - удалить запись")
     print("<command> info <имя_таблицы> - вывести информацию о таблице")
 
 
@@ -40,8 +54,9 @@ def print_table(rows: list[dict]) -> None:
     print(table)
 
 def run() -> None:
+    cache_result = create_cacher()
     while True:
-        current_metadata = load_metadata("db_meta.json")
+        current_metadata = load_metadata(METADATA_FILE)
 
         try:
             command = input("Введите команду: ")
@@ -66,21 +81,24 @@ def run() -> None:
                     continue
                 try:
                     create_table(current_metadata, args[1], columns = args[2:])
-                    save_metadata("db_meta.json", current_metadata)
+                    save_metadata(METADATA_FILE, current_metadata)
                     print(f"Таблица '{args[1]}' создана")
-                except ValueError as e:
-                    print(e)
+                except ValueError:
+                    continue
 
             case "drop_table":
                 if len(args) < 2:
                     print("Укажите имя таблицы")
                     continue
                 try:
-                    drop_table(current_metadata, args[1])
-                    save_metadata("db_meta.json", current_metadata)
-                    print(f"Таблица '{args[1]}' удалена")
-                except ValueError as e:
-                    print(e)
+                    result = drop_table(current_metadata, args[1])
+
+                    if result is not None:
+                        save_metadata(METADATA_FILE, current_metadata)
+                        print(f"Таблица '{args[1]}' удалена")
+
+                except ValueError:
+                    continue
 
             case "list_tables":
                 if not current_metadata:
@@ -91,7 +109,8 @@ def run() -> None:
                         print(f"- {table_name}")
             case "insert":
                 if len(args) < 5 or args[1] != "into" or args[3] != "values":
-                    print("Ошибка формата. Ожидается: insert into <таблица> values (<значения>)")
+                    print("Ошибка формата. "
+                          "Ожидается: insert into <таблица> values (<значения>)")
                     continue
 
                 table_name = args[2]
@@ -108,13 +127,15 @@ def run() -> None:
 
                     insert(current_metadata, table_name, converted_values)
                     print(f"Запись успешно добавлена в '{table_name}'")
+                    cache_result = create_cacher()
 
-                except ValueError as e:
-                    print(f"Ошибка: {e}")
+                except ValueError:
+                    continue
 
             case "select":
                 if len(args) < 3 or args[1] != "from":
-                    print("Ошибка формата. Ожидается: select from <таблица> [where <условие>]")
+                    print("Ошибка формата. "
+                          "Ожидается: select from <таблица> [where <условие>]")
                     continue
 
                 table_name = args[2]
@@ -129,18 +150,23 @@ def run() -> None:
                     columns = current_metadata[table_name]["columns"]
                     try:
                         where_clause = parse_where(where_str, columns)
-                    except ValueError as e:
-                        print(e)
+                    except ValueError:
                         continue
 
-                table_data = load_table_data(table_name)
-                result = select(table_data, where_clause)
+                cache_key = f"{table_name}_{where_clause}"
+
+                def value_func():
+                    t_data = load_table_data(table_name)
+                    return select(t_data, where_clause)
+
+                result = cache_result(cache_key, value_func)
 
                 print_table(result)
 
             case "update":
                 if len(args) < 6 or args[2] != "set":
-                    print("Ошибка формата. Ожидается: update <таблица> set <колонка> = <значение> [where <условие>]")
+                    print("Ошибка формата. Ожидается: update <таблица> "
+                          "set <колонка> = <значение> [where <условие>]")
                     continue
 
                 table_name = args[1]
@@ -170,12 +196,14 @@ def run() -> None:
                     save_table_data(table_name, updated_data)
 
                     print("Данные успешно обновлены.")
-                except ValueError as e:
-                    print(f"Ошибка: {e}")
+                    cache_result = create_cacher()
+                except ValueError:
+                    continue
 
             case "delete":
                 if len(args) < 5 or args[1] != "from" or args[3] != "where":
-                    print("Ошибка формата. Ожидается: delete from <таблица> where <условие>")
+                    print("Ошибка формата. "
+                          "Ожидается: delete from <таблица> where <условие>")
                     continue
 
                 table_name = args[2]
@@ -191,11 +219,14 @@ def run() -> None:
 
                     table_data = load_table_data(table_name)
                     updated_data = delete(table_data, where_clause)
-                    save_table_data(table_name, updated_data)
 
-                    print("Записи успешно удалены.")
-                except ValueError as e:
-                    print(f"Ошибка: {e}")
+                    if updated_data is not None:
+                        save_table_data(table_name, updated_data)
+                        print("Записи успешно удалены.")
+                        cache_result = create_cacher()
+
+                except ValueError:
+                    continue
 
             case "info":
                 if len(args) != 2:
@@ -217,7 +248,8 @@ def run() -> None:
                 print(f"Количество записей: {len(table)}")
 
             case _:
-                print(f"Неизвестная команда: {args[0]}. Введите 'help' для списка команд.")
+                print(f"Неизвестная команда: {args[0]}. "
+                      f"Введите 'help' для списка команд.")
 
 
 

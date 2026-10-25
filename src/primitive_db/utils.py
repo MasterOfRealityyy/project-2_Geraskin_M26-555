@@ -26,3 +26,6 @@ def save_table_data(table_name: str, data: list) -> None:
     filepath = Path("data").joinpath(table_name + ".json")
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
+
+
+

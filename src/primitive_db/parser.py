@@ -1,7 +1,10 @@
 import shlex
 from typing import Any
 
+from primitive_db.decorators import handle_db_errors
 
+
+@handle_db_errors
 def convert_values(raw_values: list[str], columns_info: list[str]) -> list[Any]:
     converted = []
 
@@ -13,17 +16,20 @@ def convert_values(raw_values: list[str], columns_info: list[str]) -> list[Any]:
                 try:
                     converted.append(int(raw_val))
                 except ValueError:
-                    raise ValueError(f"Для колонки '{col_name}' ожидалось число, получено '{raw_val}'")
+                    raise ValueError(f"Для колонки '{col_name}' ожидалось число, "
+                                     f"получено '{raw_val}'")
             case "bool":
                 val_lower = str(raw_val).lower()
                 converted.append(val_lower in ("true", "1", "yes"))
             case "str":
                 converted.append(str(raw_val))
             case _:
-                raise ValueError(f"Для колонки '{col_name}' ожидалось число, получено '{raw_val}'")
+                raise ValueError(f"Для колонки '{col_name}' "
+                                 f"ожидалось число, получено '{raw_val}'")
 
     return converted
 
+@handle_db_errors
 def parse_where(where_str: str, columns_info: list[str]) -> dict[str, Any]:
     parts = shlex.split(where_str)
 
@@ -46,10 +52,13 @@ def parse_where(where_str: str, columns_info: list[str]) -> dict[str, Any]:
                 return {column_name: int(raw_value)}
             except ValueError:
                 raise ValueError(f"Ожидалось число, получено '{raw_value}'")
-        case "bool": return {column_name: raw_value.lower() in ("true", "1", "yes")}
-        case "str": return {column_name: str(raw_value)}
-        case _: raise ValueError(f"Некорректный тип данных для колонки '{column_name}'")
+        case "bool":
+            return {column_name: raw_value.lower() in ("true", "1", "yes")}
+        case "str":
+            return {column_name: str(raw_value)}
+        case _:
+            raise ValueError(f"Некорректный тип данных для колонки '{column_name}'")
 
-
+@handle_db_errors
 def parse_set(set_str: str, columns_info: list[str]) -> dict[str, Any]:
     return parse_where(set_str, columns_info)

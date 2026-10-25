@@ -1,10 +1,14 @@
-from typing import Any
 from pathlib import Path
+from typing import Any
+
+from primitive_db.decorators import confirm_action, handle_db_errors, log_time
 from primitive_db.utils import load_table_data, save_table_data
 
 
+@handle_db_errors
+def create_table(metadata: dict[str, Any],
+                 table_name: str, columns: list[str]) -> dict[str, Any]:
 
-def create_table(metadata: dict[str, Any], table_name: str, columns: list[str]) -> dict[str, Any]:
     if table_name in metadata:
         raise ValueError(f"Таблица с именем {table_name} уже существует")
 
@@ -29,6 +33,8 @@ def create_table(metadata: dict[str, Any], table_name: str, columns: list[str]) 
 
     return metadata
 
+@handle_db_errors
+@confirm_action("удаление таблицы")
 def drop_table(metadata: dict[str, Any], table_name: str) -> dict[str, Any]:
     if table_name not in metadata:
         raise ValueError(f"Таблицы с именем '{table_name}' не существует")
@@ -41,12 +47,15 @@ def drop_table(metadata: dict[str, Any], table_name: str) -> dict[str, Any]:
 
     return metadata
 
+@handle_db_errors
+@log_time
 def insert(metadata: dict[str, Any], table_name: str, values: list[Any]) -> None:
     if table_name not in metadata:
         raise ValueError(f"Таблицы с именем '{table_name}' не существует")
 
     if len(values) != len(metadata[table_name]["columns"]) - 1:
-        raise ValueError(f"Количество переданных значений не соответствует количеству столбцов таблицы")
+        raise ValueError("Количество переданных значений "
+                         "не соответствует количеству столбцов таблицы")
 
     for value in values:
         if not isinstance(value, (int, str, bool)):
@@ -68,15 +77,20 @@ def insert(metadata: dict[str, Any], table_name: str, values: list[Any]) -> None
 
     save_table_data(table_name, table_data)
 
+@handle_db_errors
+@log_time
 def select(table_data: list[dict[str, Any]], where_clause=None) -> list[dict[str, Any]]:
     if where_clause is None:
         return table_data
 
-    table = [row for row in table_data if all(row.get(key) == value for key, value in where_clause.items())]
+    table = [row for row in table_data if
+             all(row.get(key) == value for key, value in where_clause.items())]
+
     return table
 
-
-def update(table_data: list[dict[str, Any]], set_clause: dict[str, Any], where_clause: dict[str, Any] | None) -> list[dict[str, Any]]:
+@handle_db_errors
+def update(table_data: list[dict[str, Any]], set_clause: dict[str, Any],
+           where_clause: dict[str, Any] | None) -> list[dict[str, Any]]:
 
     if not where_clause:
         raise ValueError("Не указано условие where. Обновление всей таблицы запрещено.")
@@ -87,12 +101,16 @@ def update(table_data: list[dict[str, Any]], set_clause: dict[str, Any], where_c
 
     return table_data
 
+@handle_db_errors
+@confirm_action("удаление записей")
+def delete(table_data: list[dict[str, Any]],
+           where_clause: dict[str, Any]) -> list[dict[str, Any]]:
 
-def delete(table_data: list[dict[str, Any]], where_clause: dict[str, Any]) -> list[dict[str, Any]]:
     if not where_clause:
         raise ValueError("Отсутствует условие. Удаление всей таблицы запрещено.")
 
-    updated_table = [row for row in table_data if not all(row.get(key) == value for key, value in where_clause.items())]
+    updated_table = [row for row in table_data if not
+    all(row.get(key) == value for key, value in where_clause.items())]
 
     return updated_table
 
