@@ -2,6 +2,7 @@ import shlex
 
 from prettytable import PrettyTable
 
+from primitive_db.constans import METADATA_FILE
 from primitive_db.core import create_table, delete, drop_table, insert, select, update
 from primitive_db.decorators import create_cacher
 from primitive_db.parser import convert_values, parse_set, parse_where
@@ -55,7 +56,7 @@ def print_table(rows: list[dict]) -> None:
 def run() -> None:
     cache_result = create_cacher()
     while True:
-        current_metadata = load_metadata("db_meta.json")
+        current_metadata = load_metadata(METADATA_FILE)
 
         try:
             command = input("Введите команду: ")
@@ -80,7 +81,7 @@ def run() -> None:
                     continue
                 try:
                     create_table(current_metadata, args[1], columns = args[2:])
-                    save_metadata("db_meta.json", current_metadata)
+                    save_metadata(METADATA_FILE, current_metadata)
                     print(f"Таблица '{args[1]}' создана")
                 except ValueError:
                     continue
@@ -93,7 +94,7 @@ def run() -> None:
                     result = drop_table(current_metadata, args[1])
 
                     if result is not None:
-                        save_metadata("db_meta.json", current_metadata)
+                        save_metadata(METADATA_FILE, current_metadata)
                         print(f"Таблица '{args[1]}' удалена")
 
                 except ValueError:
