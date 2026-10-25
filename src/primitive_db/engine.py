@@ -1,4 +1,4 @@
-from primitive_db.utils import load_metadata, save_metadata, load_table_data, save_table_data
+from primitive_db.utils import load_metadata, save_metadata, load_table_data, save_table_data, create_cacher
 from primitive_db.core import create_table, drop_table, insert, select, update, delete
 from primitive_db.parser import parse_where, parse_set, convert_values
 from prettytable import PrettyTable
@@ -40,6 +40,7 @@ def print_table(rows: list[dict]) -> None:
     print(table)
 
 def run() -> None:
+    cache_result = create_cacher()
     while True:
         current_metadata = load_metadata("db_meta.json")
 
@@ -68,19 +69,22 @@ def run() -> None:
                     create_table(current_metadata, args[1], columns = args[2:])
                     save_metadata("db_meta.json", current_metadata)
                     print(f"Таблица '{args[1]}' создана")
-                except ValueError as e:
-                    print(e)
+                except ValueError:
+                    continue
 
             case "drop_table":
                 if len(args) < 2:
                     print("Укажите имя таблицы")
                     continue
                 try:
-                    drop_table(current_metadata, args[1])
-                    save_metadata("db_meta.json", current_metadata)
-                    print(f"Таблица '{args[1]}' удалена")
-                except ValueError as e:
-                    print(e)
+                    result = drop_table(current_metadata, args[1])
+
+                    if result is not None:
+                        save_metadata("db_meta.json", current_metadata)
+                        print(f"Таблица '{args[1]}' удалена")
+
+                except ValueError:
+                    continue
 
             case "list_tables":
                 if not current_metadata:
@@ -108,9 +112,10 @@ def run() -> None:
 
                     insert(current_metadata, table_name, converted_values)
                     print(f"Запись успешно добавлена в '{table_name}'")
+                    cache_result = create_cacher()
 
-                except ValueError as e:
-                    print(f"Ошибка: {e}")
+                except ValueError:
+                    continue
 
             case "select":
                 if len(args) < 3 or args[1] != "from":
@@ -129,12 +134,16 @@ def run() -> None:
                     columns = current_metadata[table_name]["columns"]
                     try:
                         where_clause = parse_where(where_str, columns)
-                    except ValueError as e:
-                        print(e)
+                    except ValueError:
                         continue
 
-                table_data = load_table_data(table_name)
-                result = select(table_data, where_clause)
+                cache_key = f"{table_name}_{where_clause}"
+
+                def value_func():
+                    t_data = load_table_data(table_name)
+                    return select(t_data, where_clause)
+
+                result = cache_result(cache_key, value_func)
 
                 print_table(result)
 
@@ -170,8 +179,9 @@ def run() -> None:
                     save_table_data(table_name, updated_data)
 
                     print("Данные успешно обновлены.")
-                except ValueError as e:
-                    print(f"Ошибка: {e}")
+                    cache_result = create_cacher()
+                except ValueError:
+                    continue
 
             case "delete":
                 if len(args) < 5 or args[1] != "from" or args[3] != "where":
@@ -191,11 +201,14 @@ def run() -> None:
 
                     table_data = load_table_data(table_name)
                     updated_data = delete(table_data, where_clause)
-                    save_table_data(table_name, updated_data)
 
-                    print("Записи успешно удалены.")
-                except ValueError as e:
-                    print(f"Ошибка: {e}")
+                    if updated_data is not None:
+                        save_table_data(table_name, updated_data)
+                        print("Записи успешно удалены.")
+                        cache_result = create_cacher()
+
+                except ValueError:
+                    continue
 
             case "info":
                 if len(args) != 2:

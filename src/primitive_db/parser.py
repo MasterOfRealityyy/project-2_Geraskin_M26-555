@@ -1,7 +1,8 @@
 import shlex
 from typing import Any
+from primitive_db.decorators import handle_db_errors
 
-
+@handle_db_errors
 def convert_values(raw_values: list[str], columns_info: list[str]) -> list[Any]:
     converted = []
 
@@ -24,6 +25,7 @@ def convert_values(raw_values: list[str], columns_info: list[str]) -> list[Any]:
 
     return converted
 
+@handle_db_errors
 def parse_where(where_str: str, columns_info: list[str]) -> dict[str, Any]:
     parts = shlex.split(where_str)
 
@@ -50,6 +52,6 @@ def parse_where(where_str: str, columns_info: list[str]) -> dict[str, Any]:
         case "str": return {column_name: str(raw_value)}
         case _: raise ValueError(f"Некорректный тип данных для колонки '{column_name}'")
 
-
+@handle_db_errors
 def parse_set(set_str: str, columns_info: list[str]) -> dict[str, Any]:
     return parse_where(set_str, columns_info)

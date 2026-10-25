@@ -1,9 +1,10 @@
 from typing import Any
 from pathlib import Path
 from primitive_db.utils import load_table_data, save_table_data
+from primitive_db.decorators import handle_db_errors, confirm_action, log_time
 
 
-
+@handle_db_errors
 def create_table(metadata: dict[str, Any], table_name: str, columns: list[str]) -> dict[str, Any]:
     if table_name in metadata:
         raise ValueError(f"Таблица с именем {table_name} уже существует")
@@ -29,6 +30,8 @@ def create_table(metadata: dict[str, Any], table_name: str, columns: list[str]) 
 
     return metadata
 
+@handle_db_errors
+@confirm_action("удаление таблицы")
 def drop_table(metadata: dict[str, Any], table_name: str) -> dict[str, Any]:
     if table_name not in metadata:
         raise ValueError(f"Таблицы с именем '{table_name}' не существует")
@@ -41,6 +44,8 @@ def drop_table(metadata: dict[str, Any], table_name: str) -> dict[str, Any]:
 
     return metadata
 
+@handle_db_errors
+@log_time
 def insert(metadata: dict[str, Any], table_name: str, values: list[Any]) -> None:
     if table_name not in metadata:
         raise ValueError(f"Таблицы с именем '{table_name}' не существует")
@@ -68,6 +73,8 @@ def insert(metadata: dict[str, Any], table_name: str, values: list[Any]) -> None
 
     save_table_data(table_name, table_data)
 
+@handle_db_errors
+@log_time
 def select(table_data: list[dict[str, Any]], where_clause=None) -> list[dict[str, Any]]:
     if where_clause is None:
         return table_data
@@ -75,7 +82,7 @@ def select(table_data: list[dict[str, Any]], where_clause=None) -> list[dict[str
     table = [row for row in table_data if all(row.get(key) == value for key, value in where_clause.items())]
     return table
 
-
+@handle_db_errors
 def update(table_data: list[dict[str, Any]], set_clause: dict[str, Any], where_clause: dict[str, Any] | None) -> list[dict[str, Any]]:
 
     if not where_clause:
@@ -87,7 +94,8 @@ def update(table_data: list[dict[str, Any]], set_clause: dict[str, Any], where_c
 
     return table_data
 
-
+@handle_db_errors
+@confirm_action("удаление записей")
 def delete(table_data: list[dict[str, Any]], where_clause: dict[str, Any]) -> list[dict[str, Any]]:
     if not where_clause:
         raise ValueError("Отсутствует условие. Удаление всей таблицы запрещено.")
