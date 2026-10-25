@@ -40,6 +40,14 @@
 Аскинема с примером использования декораторов:
 [![asciicast](https://asciinema.org/a/ujWhem6vXhU3jKkJ.svg)](https://asciinema.org/a/ujWhem6vXhU3jKkJ)
 
+## Установка и запуск
+
+1. У вас должен быть установлен `uv`.
+2. Клонируйте данный репозиторий.
+3. Запустите программу:
+   ```bash
+   uv run python -m primitive_db.main
+   
 ```text
 Введите команду: create_table users name:str age:int
 Таблица 'users' создана
