@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
+
 def load_metadata(filepath: str) -> dict:
     try:
         with open(filepath, encoding="utf-8") as f:

@@ -1,15 +1,9 @@
 import functools
-from typing import Callable, Any
+import time
+from typing import Any, Callable
 
 
 def handle_db_errors(func: Callable) -> Callable:
-    """Декоратор для перехвата и вывода ошибок базы данных.
-
-    Перехватывает KeyError, ValueError и FileNotFoundError,
-    выводит сообщение об ошибке и пробрасывает её дальше,
-    чтобы вызывающая функция (engine.py) могла корректно обработать сбой.
-    """
-
     @functools.wraps(func)
     def wrapper(*args, **kwargs) -> Any:
         try:
@@ -22,10 +16,6 @@ def handle_db_errors(func: Callable) -> Callable:
 
 
 def confirm_action(action_name: str) -> Callable:
-    """Фабрика декораторов для запроса подтверждения опасных действий.
-
-    Пример: @confirm_action("удаление таблицы")
-    """
 
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
@@ -42,11 +32,7 @@ def confirm_action(action_name: str) -> Callable:
     return decorator
 
 
-import time
-
-
 def log_time(func: Callable) -> Callable:
-    """Декоратор для замера времени выполнения функции."""
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs) -> Any:

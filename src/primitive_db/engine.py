@@ -1,8 +1,17 @@
-from primitive_db.utils import load_metadata, save_metadata, load_table_data, save_table_data, create_cacher
-from primitive_db.core import create_table, drop_table, insert, select, update, delete
-from primitive_db.parser import parse_where, parse_set, convert_values
-from prettytable import PrettyTable
 import shlex
+
+from prettytable import PrettyTable
+
+from primitive_db.core import create_table, delete, drop_table, insert, select, update
+from primitive_db.parser import convert_values, parse_set, parse_where
+from primitive_db.utils import (
+    create_cacher,
+    load_metadata,
+    load_table_data,
+    save_metadata,
+    save_table_data,
+)
+
 
 def print_help() -> None:
     """Выводит справочную информацию по командам."""
@@ -14,11 +23,15 @@ def print_help() -> None:
 
     print("\n***Операции с данными***")
     print("Функции:")
-    print("<command> insert into <имя_таблицы> values (<значение1>, <значение2>, ...) - создать запись")
-    print("<command> select from <имя_таблицы> where <столбец> = <значение> - прочитать записи по условию")
+    print("<command> insert into <имя_таблицы> "
+          "values (<значение1>, <значение2>, ...) - создать запись")
+    print("<command> select from <имя_таблицы> "
+          "where <столбец> = <значение> - прочитать записи по условию")
     print("<command> select from <имя_таблицы> - прочитать все записи")
-    print("<command> update <имя_таблицы> set <столбец> = <новое_значение> where <столбец_условия> = <значение_условия> - обновить запись")
-    print("<command> delete from <имя_таблицы> where <столбец> = <значение> - удалить запись")
+    print("<command> update <имя_таблицы> set <столбец> = <новое_значение> "
+          "where <столбец_условия> = <значение_условия> - обновить запись")
+    print("<command> delete from <имя_таблицы> "
+          "where <столбец> = <значение> - удалить запись")
     print("<command> info <имя_таблицы> - вывести информацию о таблице")
 
 
@@ -95,7 +108,8 @@ def run() -> None:
                         print(f"- {table_name}")
             case "insert":
                 if len(args) < 5 or args[1] != "into" or args[3] != "values":
-                    print("Ошибка формата. Ожидается: insert into <таблица> values (<значения>)")
+                    print("Ошибка формата. "
+                          "Ожидается: insert into <таблица> values (<значения>)")
                     continue
 
                 table_name = args[2]
@@ -119,7 +133,8 @@ def run() -> None:
 
             case "select":
                 if len(args) < 3 or args[1] != "from":
-                    print("Ошибка формата. Ожидается: select from <таблица> [where <условие>]")
+                    print("Ошибка формата. "
+                          "Ожидается: select from <таблица> [where <условие>]")
                     continue
 
                 table_name = args[2]
@@ -149,7 +164,8 @@ def run() -> None:
 
             case "update":
                 if len(args) < 6 or args[2] != "set":
-                    print("Ошибка формата. Ожидается: update <таблица> set <колонка> = <значение> [where <условие>]")
+                    print("Ошибка формата. Ожидается: update <таблица> "
+                          "set <колонка> = <значение> [where <условие>]")
                     continue
 
                 table_name = args[1]
@@ -185,7 +201,8 @@ def run() -> None:
 
             case "delete":
                 if len(args) < 5 or args[1] != "from" or args[3] != "where":
-                    print("Ошибка формата. Ожидается: delete from <таблица> where <условие>")
+                    print("Ошибка формата. "
+                          "Ожидается: delete from <таблица> where <условие>")
                     continue
 
                 table_name = args[2]
@@ -230,7 +247,8 @@ def run() -> None:
                 print(f"Количество записей: {len(table)}")
 
             case _:
-                print(f"Неизвестная команда: {args[0]}. Введите 'help' для списка команд.")
+                print(f"Неизвестная команда: {args[0]}. "
+                      f"Введите 'help' для списка команд.")
 
 
 
