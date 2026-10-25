@@ -25,7 +25,11 @@
 
 ### Пример использования
 
+Аскинема с примером управления таблицами:
 [![asciicast](https://asciinema.org/a/Arfn79TVQvF31iBj.svg)](https://asciinema.org/a/Arfn79TVQvF31iBj)
+
+Аскинема с примером использования CRUD-операций:
+[![asciicast](https://asciinema.org/a/8UvGF3ubKb8Q7dAR.svg)](https://asciinema.org/a/8UvGF3ubKb8Q7dAR)
 
 ```text
 Введите команду: create_table users name:str age:int
