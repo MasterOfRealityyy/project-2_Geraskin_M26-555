@@ -44,30 +44,22 @@
 Введите команду: create_table users name:str age:int
 Таблица 'users' создана
 
-Введите команду: list_tables
-Список таблиц:
-- users
-
-Введите команду: drop_table users
-Таблица 'users' удалена
-
-Введите команду: create_table users name:str age:int
-Таблица 'users' создана
-
 Введите команду: insert into users values (Ivan, 25)
 Запись успешно добавлена в 'users'
+Функция insert выполнялась за 0.001 секунд
 
 Введите команду: insert into users values (Maria, 22)
 Запись успешно добавлена в 'users'
+Функция insert выполнялась за 0.001 секунд
 
 Введите команду: select from users
-
 +----+-------+-----+
 | ID |  name | age |
 +----+-------+-----+
 | 1  |  Ivan |  25 |
 | 2  | Maria |  22 |
 +----+-------+-----+
+Функция select выполнялась за 0.001 секунд
 
 Введите команду: update users set age = 30 where name = 'Ivan'
 Данные успешно обновлены.
@@ -80,6 +72,7 @@
 +----+------+-----+
 
 Введите команду: delete from users where name = 'Maria'
+Вы уверены, что хотите выполнить "удаление записей"? [y/n]: y
 Записи успешно удалены.
 
 Введите команду: info users
